@@ -31,9 +31,29 @@ parser.add_argument(
     help="Specify Target Domain to get subdomains from crt.sh",
     required=True,
 )
+parser.add_argument(
+    "-x",
+    "--exclude",
+    help="provide a single subdomain to exlude",
+    required=False
+)
+parser.add_argument(
+    '-l',
+    "--list_exclude",
+    type=argparse.FileType(),
+    help='option to use exclusion file in list format of subdomains to exlude'
+                    )
 query = parser.parse_args()
 dname = query.domain
 cname = "common_name"
+if query.exclude is not None:
+    exclusion_list = []
+    exclusion_list.append(str(query.exclude))
+elif query.list_exclude is not None:
+    exclusion_list=query.list_exclude.read()
+else:
+    exclusion_list=[]
+print(f'exluding:\n {exclusion_list}')
 
 
 class FileHandle:
@@ -47,12 +67,14 @@ class FileHandle:
         """write to file."""
         subfolder = f"{dname}/{fname}"
         if not os.path.exists(dname):
-            os.mkdir(dname)
+            os.makedirs(dname)
         if not os.path.exists(subfolder):
-            os.mkdir(subfolder)
+            os.makedirs(subfolder)
         with open(f"{subfolder}/{fname}", "w", encoding="utf-8") as file:
             file.write(data)
             file.close()
+
+
 
 
 def get_data():
@@ -61,17 +83,18 @@ def get_data():
     url = BASE_URL.format(str(dname))
     r = requests.get(url, headers=headers, timeout=25)
     response = r.json()
-    output = json.dumps(response)
+    output = str(json.dumps(response))
     print("---------------------------\n")
     print(f" + Discovering domains for {dname} \n")
     FileHandle.write_file(fname=f"crt-results-for-{dname}.json", data=output)
     for each in response:
         domain_name = each["common_name"]
-
-        if domain_name not in url_list:
-            print(f"+ common name found: {domain_name}")
-            if "*" not in domain_name:
+        subdomain=domain_name.split(".", 1)
+        if domain_name not in url_list :
+            print(f"+ common name found: {domain_name}")      
+            if "*" not in domain_name and domain_name not in exclusion_list and subdomain[0] not in exclusion_list:
                 url_list.append(domain_name)
+        
     return url_list
 
 
@@ -84,6 +107,7 @@ def check_url():
         count += 1
         url = "https://" + d
         subdir = f"{dname}/{d}"
+        
         header_data = HeaderCheck.get_headers.scan_it([url])
         resp = ""
         try:
@@ -124,7 +148,7 @@ def check_url():
         else:
             FileHandle.write_file(d, str(resp))
             print("- Domain not accepting http requests.")
-    print(f"+ Found [{count}]: urls, available at /{dname}")
+    print(f"+ Found [{count}]: urls, available at {dname}")
 
 
 check_url()

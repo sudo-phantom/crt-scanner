@@ -15,7 +15,20 @@ in the command prompt or powershell.
 for more information on how to do that [Google](https://developer.chrome.com/docs/chromedriver/get-started/) has a guide.
 ---
 
-`Usage: python3 crt-scanner.py -d <URL to scan>`
+```
+usage: crt-scanner.py [-h] -d DOMAIN [-x EXCLUDE] [-l LIST_EXCLUDE]
+
+OPTIONS:
+  -h, --help            show this help message and exit
+  -d DOMAIN, --domain DOMAIN
+                        Specify Target Domain to get subdomains from crt.sh
+  -x EXCLUDE, --exclude EXCLUDE
+                        provide a single subdomain to exlude(optional)
+  -l LIST_EXCLUDE, --list_exclude LIST_EXCLUDE
+                        option to use exclusion file in list format of subdomains to exlude(optional)
+
+Example: python3 crt-scanner.py -d google.com
+```
 
 ![example run](image.png)
 ---
